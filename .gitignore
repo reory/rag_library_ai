@@ -31,19 +31,16 @@ venv/
 ENV/
 
 # Streamlit
-.streamlit/config.toml
+#.streamlit/config.toml
 .streamlit/secrets.toml
 
 # Environment variables
 .env
 .flaskenv
-
-# Vector database storage (Local ChromaDB data)
-vectorstore/db/
-chroma/
+.rag_library_ai_deploy/
 
 # Large Data files
-data/books/*.pdf
+# data/books/*.pdf
 
 # IDEs
 .vscode/

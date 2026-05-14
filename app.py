@@ -16,17 +16,61 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 os.environ["TRANSFORMERS_VERBOSITY"] = "error"
 os.environ["STREAMLIT_LOG_LEVEL"] = "error"
 
-# Load File
+# Load environment variables
 load_dotenv()
 
 # Page configuration - tab title and icon
-st.set_page_config(page_title="Roy Peters", page_icon="😁")
-st.title("RAG Library AI")
-st.markdown("Ask anything based on your uploaded PDFs.")
+st.set_page_config(page_title="Roy Peters", page_icon="😁", layout="centered")
+
+# CUSTOM UI THEME + HEADER
+st.markdown(
+    """
+    <style>
+    .stApp {
+        background-color: #e6f2ff;
+        background-image: linear-gradient(to bottom right, #e6f2ff, #cce0ff);
+        font-family: 'Segoe UI', sans-serif;
+    }
+    h1 {
+        color: #1a1a1a;
+        text-align: center;
+        font-weight: 700;
+        margin-bottom: 0.2rem;
+    }
+    h3 {
+        color: #004080;
+        text-align: center;
+        font-weight: 500;
+        margin-top: 0rem;
+    }
+    .badge-container {
+        text-align: center;
+        margin-bottom: 25px;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+st.markdown("<h1>RAG Library AI</h1>", unsafe_allow_html=True)
+st.markdown("<h3>Ask anything based on Python.</h3>", unsafe_allow_html=True)
+
+# Python library badges
+st.markdown(
+    """
+    <div class="badge-container">
+        <img src="https://img.shields.io/badge/NumPy-013243?style=for-the-badge&logo=numpy&logoColor=white">
+        <img src="https://img.shields.io/badge/Pandas-150458?style=for-the-badge&logo=pandas&logoColor=white">
+        <img src="https://img.shields.io/badge/Matplotlib-11557c?style=for-the-badge&logo=plotly&logoColor=white">
+        <img src="https://img.shields.io/badge/TensorFlow-FF6F00?style=for-the-badge&logo=tensorflow&logoColor=white">
+        <img src="https://img.shields.io/badge/PyTorch-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white">
+        <img src="https://img.shields.io/badge/scikit--learn-F7931E?style=for-the-badge&logo=scikit-learn&logoColor=white">
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
 # --- HELPER FUNCTIONS ---
-
-# 
 def clear_text_callback():
     """Reset the input field using a callback to avoid StreamlitAPIException"""
     st.session_state["query_input"] = ""
