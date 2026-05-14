@@ -1,4 +1,5 @@
 # RAG Library AI 📚
+
 ![Last Commit](https://img.shields.io/github/last-commit/reory/Rag_Library_AI?cacheSeconds=60)
 ![Repo Size](https://img.shields.io/github/repo-size/reory/Rag_Library_AI?cacheSeconds=60)
 ![License](https://img.shields.io/badge/License-MIT-green)
@@ -14,9 +15,9 @@ This project is a Retrieval-Augmented Generation (RAG) application designed to a
 
 # 📸 Screenshots
 - Screenshots of the RAG Library in action
-
-![Chat Interface](screenshots/chat_interface_1.png)
-![Chat Interface](screenshots/chat_interface_2.png)
+- Example questions
+![Chat Interface](screenshots/dashboard1.png)
+![Chat Interface](screenshots/dashboard2.png)
 
 ---
 

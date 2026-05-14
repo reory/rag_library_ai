@@ -37,7 +37,8 @@ ENV/
 # Environment variables
 .env
 .flaskenv
-.rag_library_ai_deploy/
+
+rag_library_ai_deploy/
 
 # Large Data files
 # data/books/*.pdf
