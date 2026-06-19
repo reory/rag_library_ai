@@ -94,6 +94,7 @@ uv run streamlit run app.py
 ---
 
 # 🛣️ Roadmap Features
+- [ ] Rust-Powered Processing: Integrate a high-speed text chunking core using PyO3      and Maturin for lightning-fast book ingestion.
 - [ ] Display exactly which page and book the AI found the answer in.
 - [ ] Multi-User Sessions: Support individual chat histories.
 - [ ] Hybrid Search: Combine vector search with keyword search for better accuracy.

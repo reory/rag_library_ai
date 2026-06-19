@@ -8,3 +8,5 @@ chromadb
 sentence-transformers
 pypdf
 python-dotenv
+maturin
+https://huggingface.co/spaces/reory/rag-library-ai/resolve/main/fast_chunker-0.1.0-cp310-abi3-manylinux_2_34_x86_64.whl

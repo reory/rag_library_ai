@@ -10,11 +10,18 @@ load_dotenv()
 
 DB_PATH = "vectorstore/db"
 
+
 # ✅ This converts Document objects into plain text for the LLM
 def format_docs(docs):
     return "\n\n".join(doc.page_content for doc in docs)
 
+
 def ask_the_books(question):
+    """
+    Query the loaded books with the
+    given questions and return generated answers.
+    """
+
     embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
     vector_db = Chroma(persist_directory=DB_PATH, embedding_function=embeddings)
     llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0)
@@ -39,6 +46,7 @@ def ask_the_books(question):
 
     print("\n🤖 AI RESPONSE")
     print(response)
+
 
 if __name__ == "__main__":
     user_query = input("\n🤖 What would you like to ask your Python books? ")
