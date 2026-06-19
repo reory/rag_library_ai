@@ -5,6 +5,7 @@
 ![License](https://img.shields.io/badge/License-MIT-green)
 
 ![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Rust](https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white)
 ![LangChain](https://img.shields.io/badge/LangChain-1C3C3C?style=for-the-badge&logo=langchain&logoColor=white)
 ![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)
 ![ChromaDB](https://img.shields.io/badge/ChromaDB-000000?style=for-the-badge&logo=googlecloud&logoColor=white)
@@ -94,7 +95,7 @@ uv run streamlit run app.py
 ---
 
 # 🛣️ Roadmap Features
-- [ ] Rust-Powered Processing: Integrate a high-speed text chunking core using PyO3      and Maturin for lightning-fast book ingestion.
+- [x] Rust-Powered Processing: Integrate a high-speed text chunking core using PyO3      and Maturin for lightning-fast book ingestion.
 - [ ] Display exactly which page and book the AI found the answer in.
 - [ ] Multi-User Sessions: Support individual chat histories.
 - [ ] Hybrid Search: Combine vector search with keyword search for better accuracy.
