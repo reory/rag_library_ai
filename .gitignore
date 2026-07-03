@@ -50,3 +50,7 @@ rag_library_ai_deploy/
 # OS specific
 .DS_Store
 Thumbs.db
+
+fast_chunker-0.1.0-cp310-abi3-manylinux_2_34_x86_64.whl
+fast_chunker-*.whl
+fast_chunker/target/

@@ -5,8 +5,7 @@ from langchain_chroma import Chroma
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import RunnablePassthrough
-from langchain_core.output_parsers import StrOutputParser
+from guardrail import RAGGuardrail
 import warnings
 
 # Block Python's internal warnings if not fatal
@@ -81,12 +80,13 @@ def format_docs(docs):
 
 # 
 @st.cache_resource
-def load_llm():
-    """Setup the AI Brain."""
+def load_rag_components():
+    """Setup and cache individual RAG components for precise control."""
     embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
     vector_db = Chroma(persist_directory="vectorstore/db", embedding_function=embeddings)
-    llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0)
     retriever = vector_db.as_retriever(search_kwargs={"k": 3})
+
+    llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0)
 
     prompt = ChatPromptTemplate.from_template("""
     Answer based only on the provided context. If the answer isn't in the context, say so.
@@ -95,17 +95,15 @@ def load_llm():
     Question: {question}
     """)
 
-    return (
-        {"context": retriever | format_docs, "question": RunnablePassthrough()}
-        | prompt
-        | llm
-        | StrOutputParser()
-    )
+    # Instantiate our local guardrail checker (Threshold set to 60%)
+    guardrail = RAGGuardrail(threshold=0.60)
 
-qa_chain = load_llm()
+    return retriever, prompt, llm, guardrail
+
+# Unbundle components instead of using a collapsed chain linear pipeline
+retriever, prompt_template, llm, guardrail = load_rag_components()
 
 # --- CHAT INTERFACE ---
-
 col1, col2 = st.columns([5, 1])
 
 with col1:
@@ -120,10 +118,40 @@ with col2:
 
 # Processing the query
 if user_query:
-    with st.spinner("🔎 Searching the books..."):
+    with st.spinner("🔎 Searching the books and verfying facts..."):
         try:
-            response = qa_chain.invoke(user_query)
-            st.subheader("🤖 AI Response:")
-            st.write(response)
+            # Fetch relevant pages from the 3 books explicitly
+            matched_docs = retriever.invoke(user_query)
+            context_text = format_docs(matched_docs)
+
+            if not context_text.strip():
+                st.warning("🤖 The vector database could not find relevant content in the books.")
+            
+            else:
+                # Format the custom prompt structure manually
+                formatted_prompt = prompt_template.format(context=context_text, question=user_query)
+
+                # Generate raw prediction from Gemini
+                raw_response = llm.invoke(formatted_prompt).content
+
+                # Push the response through the local Semantic Guardrail Filter
+                is_safe, evaluation_score = guardrail.is_grounded(context_text, raw_response)
+
+                # Route output determinstically based on factual similarity
+                st.subheader("🤖 AI Response:")
+                if is_safe:
+                    st.write(raw_response)
+                    st.caption(f"🛡️ Guardrail passed (Score: {evaluation_score:.2f})")
+                
+                else:
+                    st.error(
+                        "⚠️ Response Intercepted: "
+                        "The AI attempted to hallucinate non-existent syntax or returned " 
+                        "incoherent text patterns ungrounded by the books"
+                    )
+                    with st.expander("See details of the blocked response"):
+                        st.write(f"**Semantic Alignment Score:** {evaluation_score:.2f} (Required: >= 0.72)")
+                        st.write(f"**Raw Intercepted Text:** {raw_response}")
+
         except Exception as e:
             st.error(f"An error occurred: {e}")

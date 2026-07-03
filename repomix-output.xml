@@ -1,0 +1,1409 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+.coverage
+.gitignore
+.streamlit
+app.py
+CONTRIBUTING.md
+data/books/Advanced_Python_Programming.pdf
+data/books/fluent_python_2nd_edition.pdf
+data/books/thinkpython2.pdf
+fast_chunker-0.1.0-cp310-abi3-manylinux_2_34_x86_64.whl
+fast_chunker/.github/workflows/CI.yml
+fast_chunker/.gitignore
+fast_chunker/Cargo.toml
+fast_chunker/pyproject.toml
+fast_chunker/src/lib.rs
+guardrail.py
+ingest.py
+LICENSE.md
+pyproject.toml
+pytest.ini
+query.py
+README.md
+requirements.txt
+screenshots/dashboard1.png
+screenshots/dashboard2.png
+tests/__init__.py
+tests/conftest.py
+tests/test_app.py
+tests/test_fast_chunker.py
+tests/test_ingest.py
+tests/test_query.py
+vectorstore/db/26d45d2e-196e-405e-aa30-744dea7aaea6/data_level0.bin
+vectorstore/db/26d45d2e-196e-405e-aa30-744dea7aaea6/header.bin
+vectorstore/db/26d45d2e-196e-405e-aa30-744dea7aaea6/index_metadata.pickle
+vectorstore/db/26d45d2e-196e-405e-aa30-744dea7aaea6/length.bin
+vectorstore/db/26d45d2e-196e-405e-aa30-744dea7aaea6/link_lists.bin
+vectorstore/db/chroma.sqlite3
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="guardrail.py">
+from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
+
+class RAGGuardrail:
+    def __init__(self, threshold=0.60):
+        """
+        Initialises a local embedding model to audit the RAG outputs.
+        Using the same embedding model as the rest of the application.
+        """
+
+        self.model = SentenceTransformer('all-MiniLM-L6-v2')
+        self.threshold = threshold
+
+        self.refusal_phrases = [
+            "isn't in the context",
+            "is not in the context",
+            "not mentioned in the context",
+            "i am sorry",
+            "cannot answer"
+        ]
+
+    def is_grounded(self, context:str, ai_response: str) -> tuple[bool, float]:
+        """
+        Compares the generated answer against the text retrieved from the books.
+        Returns (True, score) if safe, (False, score) if it's jumbled or a
+        hallucination.
+        """
+
+        lowered_response = ai_response.lower()
+
+        # If the AI is safely refusing, let it pass!
+        for phrase in self.refusal_phrases:
+            if phrase in lowered_response:
+                print(" Guardrail Audit -> Safe Refusal Detected bypassing Math.")
+                return True, 1.0
+
+        # Encode both into a vector space
+        embeddings = self.model.encode([context, ai_response])
+
+        context_vec = embeddings[0].reshape(1, -1)
+        response_vec = embeddings[1].reshape(1, -1)
+
+        # Calculate cosine similarity score
+        score = cosine_similarity(context_vec, response_vec)[0][0]
+
+        # Returns evaluation pass status and the score metric
+        return score >= self.threshold, score
+</file>
+
+<file path="pytest.ini">
+[pytest]
+minversion = 7.0
+
+addopts =
+    --cov=rag_technical_app
+    --cov=ingest
+    --cov=query
+    --cov-report=term-missing
+    --cov-report=html
+    -vv
+
+testpaths = tests
+python_files = test_*.py
+python_classes = Test*
+python_functions = test_*
+
+filterwarnings =
+    ignore:datetime\.datetime\.utcfromtimestamp\(\) is deprecated:DeprecationWarning:google\.protobuf
+</file>
+
+<file path="tests/__init__.py">
+
+</file>
+
+<file path="tests/conftest.py">
+"""
+Shared fixtures: fake docs, fake embeddings, fake Chroma,
+fake LLM, and a helper to monkeypatch environment
+"""
+
+import os
+import types
+import pytest
+
+
+@pytest.fixture(autouse=True)
+def fake_str_output_parser(monkeypatch):
+    class FakeParser:
+        def __call__(self, input):
+            return self.invoke(input)
+
+        def __ror__(self, other):
+            return self
+
+        def __or__(self, other):
+            return self
+
+        def invoke(self, input):
+            return input
+
+    monkeypatch.setattr(
+        "langchain_core.output_parsers.StrOutputParser", lambda: FakeParser()
+    )
+
+
+@pytest.fixture(autouse=True)
+def set_test_env(monkeypatch, tmp_path):
+    """Ensure a clean env and temp vectorstore path for tests."""
+
+    monkeypatch.setenv("GOOGLE_API_KEY", "DUMMY_KEY")
+    monkeypatch.chdir(tmp_path)
+    yield
+
+
+@pytest.fixture
+def sample_docs():
+    """Simple mock 'Document' objects with page content and metadata."""
+
+    Doc = types.SimpleNamespace
+    return [
+        Doc(page_content="Python lists are mutable sequences.", metadata={"page": 10}),
+        Doc(
+            page_content="Tuples are immutable sequences in Python.",
+            metadata={"page": 11},
+        ),
+    ]
+
+
+@pytest.fixture
+def fake_embeddings():
+    """Fake embedding model that returns deterministic vectors."""
+
+    class FakeEmbeddings:
+        def embed_documents(self, texts):
+            return [[float(len(t))] for t in texts]
+
+        def embed_query(self, text):
+            return [float(len(text))]
+
+    return FakeEmbeddings()
+
+
+@pytest.fixture
+def fake_chroma_class(sample_docs):
+    """Fake chroma class to stand in for Chroma DB."""
+
+    class FakeRetriever:
+        def __init__(self, docs):
+            self._docs = docs
+
+        def get_relevant_documents(self, query):
+            return self._docs
+
+        def __call__(self, query):
+            return self.get_relevant_documents(query)
+
+        def __or__(self, other):
+            def runnable(_):
+                return {"context": other(self._docs)}
+
+            return runnable
+
+        def __ror__(self, other):
+            return self
+
+    class FakeCollection:
+        def __init__(self, docs):
+            self._docs = docs
+
+        def count(self):
+            return len(self._docs)
+
+    class FakeChroma:
+        def __init__(self, persist_directory=None, embedding_function=None, **kwargs):
+            self._docs = sample_docs
+            self._collection = FakeCollection(self._docs)
+
+            if persist_directory:
+                os.makedirs(persist_directory, exist_ok=True)
+
+        @classmethod
+        def from_documents(cls, documents, embedding, persist_directory=None):
+            inst = cls(
+                persist_directory=persist_directory, embedding_function=embedding
+            )
+            inst._docs = documents
+            inst._collection = FakeCollection(documents)
+            return inst
+
+        def as_retriever(self, search_kwargs=None):
+            return FakeRetriever(self._docs)
+
+    return FakeChroma
+
+
+@pytest.fixture
+def fake_llm_class():
+    """Fake llm that echoes the question and context length."""
+
+    class FakeLLM:
+        def __init__(self, model=None, temperature=0, **kwargs):
+            pass
+
+        def __call__(self, input):
+            return self.invoke(input)
+
+        def __ror__(self, other):
+            return self
+
+        def __or__(self, other):
+            return self
+
+        def invoke(self, input):
+            # Pass a simple string for testing purposes
+            return "FAKE_LLM_RESPONSE"
+
+    return FakeLLM
+</file>
+
+<file path="tests/test_app.py">
+# Focus on format_docs and load_llm from app.py,
+# mocking heavy dependencies so system does not hit real Chroma or Gemini.
+
+import app
+
+
+def test_format_docs_app(sample_docs):
+    text = app.format_docs(sample_docs)
+    assert "Python lists are mutable" in text
+    assert "Tuples are immutable" in text
+
+
+def test_load_llm_builds_chain(
+    monkeypatch, fake_chroma_class, fake_embeddings, fake_llm_class
+):
+    # Monkeypatch heavy deps
+    monkeypatch.setattr(
+        app, "HuggingFaceEmbeddings", lambda model_name: fake_embeddings
+    )
+    monkeypatch.setattr(app, "Chroma", fake_chroma_class)
+    monkeypatch.setattr(app, "ChatGoogleGenerativeAI", fake_llm_class)
+
+    chain = app.load_llm()
+
+    # The returned object should be callable via .invoke in the real app
+    assert chain is not None
+
+    # Just assert that it returns *something* string-like
+    result = chain.invoke("What is a tuple?")
+    assert isinstance(result, str)
+    assert result  # non-empty
+</file>
+
+<file path="tests/test_fast_chunker.py">
+# Unit tests for the Rust chunker, with a skip if the module isn’t available.
+
+
+import fast_chunker
+import pytest
+
+pytestmark = pytest.mark.skipif(
+    pytest.importorskip("fast_chunker", reason="fast_chunker wheel not available")
+    is None,
+    reason="fast_chunker not importable",
+)
+
+
+def test_chunk_text_basic():
+    import fast_chunker
+
+    text = "abcdefghijklmnopqrstuvwxyz"
+    chunks = fast_chunker.chunk_text(text, chunk_size=10, chunk_overlap=2)
+
+    # Should produce overlapping chunks
+    assert len(chunks) >= 2
+    assert chunks[0].startswith("a")
+    assert chunks[1][0] in chunks[0]  # overlap
+
+
+def test_chunk_text_overlap_guard():
+
+    with pytest.raises(Exception):
+        fast_chunker.chunk_text("abc", chunk_size=10, chunk_overlap=10)
+</file>
+
+<file path="tests/test_ingest.py">
+# Mock out PyPDFLoader, fast_chunker.chunk_text,
+# HuggingFaceEmbeddings, and Chroma so ingestion is fast and deterministic.
+
+# tests/test_ingest.py
+import types
+import ingest
+
+
+def test_run_ingestion_happy_path(
+    monkeypatch, tmp_path, fake_chroma_class, fake_embeddings
+):
+    # Create fake DATA_PATH with a dummy PDF filename
+    data_dir = tmp_path / "data" / "books"
+    data_dir.mkdir(parents=True)
+    (data_dir / "dummy.pdf").write_text("PDF CONTENT IGNORED")
+
+    monkeypatch.setattr(ingest, "DATA_PATH", str(data_dir))
+    monkeypatch.setattr(ingest, "DB_PATH", str(tmp_path / "vectorstore" / "db"))
+
+    # Fake PyPDFLoader to return simple docs
+    class FakeLoader:
+        def __init__(self, path):
+            self.path = path
+
+        def load(self):
+            Doc = types.SimpleNamespace
+            return [
+                Doc(page_content="Some Python content", metadata={"source": self.path})
+            ]
+
+    monkeypatch.setattr(ingest, "PyPDFLoader", FakeLoader)
+
+    # Fake fast_chunker
+    class FakeFastChunker:
+        @staticmethod
+        def chunk_text(text, chunk_size, chunk_overlap):
+            return [text[:10], text[10:20]]
+
+    monkeypatch.setattr(ingest, "fast_chunker", FakeFastChunker)
+
+    # Fake embeddings + Chroma
+    monkeypatch.setattr(
+        ingest, "HuggingFaceEmbeddings", lambda model_name: fake_embeddings
+    )
+    monkeypatch.setattr(ingest, "Chroma", fake_chroma_class)
+
+    # Run
+    ingest.run_ingestion()
+
+    # Verify DB path created
+    assert (tmp_path / "vectorstore" / "db").exists()
+
+
+def test_run_ingestion_missing_data_folder(monkeypatch, tmp_path, capsys):
+    # Point DATA_PATH to a non-existent folder
+    missing_dir = tmp_path / "nope"
+    monkeypatch.setattr(ingest, "DATA_PATH", str(missing_dir))
+
+    ingest.run_ingestion()
+    captured = capsys.readouterr()
+    assert "Error: Please create" in captured.out
+</file>
+
+<file path="tests/test_query.py">
+# Test the CLI-style query pipeline by mocking Chroma, embeddings, and LLM
+
+# tests/test_query.py
+import query
+
+
+def test_format_docs(sample_docs):
+    text = query.format_docs(sample_docs)
+    assert "Python lists are mutable" in text
+    assert "Tuples are immutable" in text
+    assert "\n\n" in text
+
+
+def test_ask_the_books(
+    monkeypatch, fake_chroma_class, fake_embeddings, fake_llm_class, capsys
+):
+    # Monkeypatch dependencies
+    monkeypatch.setattr(
+        query, "HuggingFaceEmbeddings", lambda model_name: fake_embeddings
+    )
+    monkeypatch.setattr(query, "Chroma", fake_chroma_class)
+    monkeypatch.setattr(query, "ChatGoogleGenerativeAI", fake_llm_class)
+
+    query.ask_the_books("What is a list in Python?")
+
+    captured = capsys.readouterr()
+    assert "🔎 Searching for: What is a list in Python?" in captured.out
+    assert "🤖 AI RESPONSE" in captured.out
+    assert "FAKE_LLM_RESPONSE" in captured.out
+</file>
+
+<file path=".streamlit">
+[theme]
+primaryColor = "#F63366"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F0F2F6"
+textColor = "#262730"
+font = "sans serif"
+
+[server]
+maxUploadSize = 200
+</file>
+
+<file path="CONTRIBUTING.md">
+# Contributing to RAG Library AI
+
+First off, thank you for considering contributing!
+
+## How Can I Contribute?
+
+### Reporting Bugs
+* Check the Issues tab to see if the bug has already been reported.
+* If not, open a new issue with a clear title and a description of how to reproduce the error.
+
+### Suggesting Enhancements
+* We are always looking to improve the RAG pipeline! 
+* Suggestions for better chunking strategies or new LLM integrations are welcome.
+
+### Pull Requests
+1. **Fork** the repository.
+2. **Create a branch** for your feature (`git checkout -b feature/AmazingFeature`).
+3. **Set up your environment**:
+   - Install dependencies: `pip install -r requirements.txt`
+   - Set up your `.env` with a `GOOGLE_API_KEY`.
+4. **Commit your changes** (`git commit -m 'Add some AmazingFeature'`).
+5. **Push to the branch** (`git push origin feature/AmazingFeature`).
+6. **Open a Pull Request**.
+
+## Technical Stack
+This project uses:
+* **Streamlit** for the UI.
+* **LangChain** for the RAG orchestration.
+* **ChromaDB** for vector storage.
+* **Gemini 2.5 Flash** as the primary LLM.
+
+## Coding Standards
+* Please follow PEP 8 guidelines for Python code.
+* Ensure any new dependencies are added to `requirements.txt` or `pyproject.toml`
+
+## License
+By contributing, you agree that your contributions will be licensed under the project's MIT License.
+</file>
+
+<file path="fast_chunker/.github/workflows/CI.yml">
+# This file is autogenerated by maturin v1.14.1
+# To update, run
+#
+#    maturin generate-ci github
+#
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    tags:
+      - '*'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  linux:
+    runs-on: ${{ matrix.platform.runner }}
+    strategy:
+      matrix:
+        platform:
+          - runner: ubuntu-22.04
+            target: x86_64
+          - runner: ubuntu-22.04
+            target: x86
+          - runner: ubuntu-22.04
+            target: aarch64
+          - runner: ubuntu-22.04
+            target: armv7
+          - runner: ubuntu-22.04
+            target: s390x
+          - runner: ubuntu-22.04
+            target: ppc64le
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.x"
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.platform.target }}
+          args: --release --out dist --find-interpreter
+          sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
+          manylinux: auto
+      - name: Upload wheels
+        uses: actions/upload-artifact@v6
+        with:
+          name: wheels-linux-${{ matrix.platform.target }}
+          path: dist
+
+  musllinux:
+    runs-on: ${{ matrix.platform.runner }}
+    strategy:
+      matrix:
+        platform:
+          - runner: ubuntu-22.04
+            target: x86_64
+          - runner: ubuntu-22.04
+            target: x86
+          - runner: ubuntu-22.04
+            target: aarch64
+          - runner: ubuntu-22.04
+            target: armv7
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.x"
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.platform.target }}
+          args: --release --out dist --find-interpreter
+          sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
+          manylinux: musllinux_1_2
+      - name: Upload wheels
+        uses: actions/upload-artifact@v6
+        with:
+          name: wheels-musllinux-${{ matrix.platform.target }}
+          path: dist
+
+  windows:
+    runs-on: ${{ matrix.platform.runner }}
+    strategy:
+      matrix:
+        platform:
+          - runner: windows-latest
+            target: x64
+            python_arch: x64
+          - runner: windows-latest
+            target: x86
+            python_arch: x86
+          - runner: windows-11-arm
+            target: aarch64
+            python_arch: arm64
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          architecture: ${{ matrix.platform.python_arch }}
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.platform.target }}
+          args: --release --out dist --find-interpreter
+          sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
+      - name: Upload wheels
+        uses: actions/upload-artifact@v6
+        with:
+          name: wheels-windows-${{ matrix.platform.target }}
+          path: dist
+
+  macos:
+    runs-on: ${{ matrix.platform.runner }}
+    strategy:
+      matrix:
+        platform:
+          - runner: macos-15-intel
+            target: x86_64
+          - runner: macos-latest
+            target: aarch64
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.x"
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.platform.target }}
+          args: --release --out dist --find-interpreter
+          sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
+      - name: Upload wheels
+        uses: actions/upload-artifact@v6
+        with:
+          name: wheels-macos-${{ matrix.platform.target }}
+          path: dist
+
+  sdist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Build sdist
+        uses: PyO3/maturin-action@v1
+        with:
+          command: sdist
+          args: --out dist
+      - name: Upload sdist
+        uses: actions/upload-artifact@v6
+        with:
+          name: wheels-sdist
+          path: dist
+
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    if: ${{ startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch' }}
+    needs: [linux, musllinux, windows, macos, sdist]
+    permissions:
+      # Use to sign the release artifacts
+      id-token: write
+      # Used to upload release artifacts
+      contents: write
+      # Used to generate artifact attestation
+      attestations: write
+    steps:
+      - uses: actions/download-artifact@v7
+      - name: Generate artifact attestation
+        uses: actions/attest@v4
+        with:
+          subject-path: 'wheels-*/*'
+      - name: Install uv
+        if: ${{ startsWith(github.ref, 'refs/tags/') }}
+        uses: astral-sh/setup-uv@v7
+      - name: Publish to PyPI
+        if: ${{ startsWith(github.ref, 'refs/tags/') }}
+        run: uv publish 'wheels-*/*'
+        env:
+          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+</file>
+
+<file path="fast_chunker/.gitignore">
+/target
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+.pytest_cache/
+*.py[cod]
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+.venv/
+env/
+bin/
+build/
+develop-eggs/
+dist/
+eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+include/
+man/
+venv/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+pip-selfcheck.json
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.cache
+nosetests.xml
+coverage.xml
+
+# Translations
+*.mo
+
+# Mr Developer
+.mr.developer.cfg
+.project
+.pydevproject
+
+# Rope
+.ropeproject
+
+# Django stuff:
+*.log
+*.pot
+
+.DS_Store
+
+# Sphinx documentation
+docs/_build/
+
+# PyCharm
+.idea/
+
+# VSCode
+.vscode/
+
+# Pyenv
+.python-version
+</file>
+
+<file path="fast_chunker/Cargo.toml">
+[package]
+name = "fast_chunker"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "fast_chunker"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = "0.29.0"
+</file>
+
+<file path="fast_chunker/pyproject.toml">
+[build-system]
+requires = ["maturin>=1.14,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "fast_chunker"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+]
+dynamic = ["version"]
+</file>
+
+<file path="fast_chunker/src/lib.rs">
+use pyo3::prelude::*;
+
+/// A Python module implemented in Rust.
+#[pymodule]
+mod fast_chunker {
+    use pyo3::prelude::*;
+
+    /// Slices a massive string into smaller overlapping character blocks safely.
+    #[pyfunction]
+    fn chunk_text(text: String, chunk_size: usize, chunk_overlap: usize) -> PyResult<Vec<String>> {
+        // Safety Guard: Prevent infinite loops or negative math errors
+        if chunk_overlap >= chunk_size {
+            return Err(pyo3::exceptions::PyValueError::new_err(
+                "chunk_overlap must be strictly smaller than chunk_size"
+            ));
+        }
+    
+        // Safe character extraction
+        let chars: Vec<char> = text.chars().collect();
+        let mut chunks = Vec::new();
+        let mut start = 0;
+
+        // High-Speed sliding window loop
+        while start < chars.len() {
+            // Guarantee code does not look past the final characters of the text
+            let end = std::cmp::min(start + chunk_size, chars.len());
+
+            // Take the slice of characters and assemble them back into a clean String
+            let chunk: String = chars[start..end].iter().collect();
+            chunks.push(chunk);
+
+            // Break early if code reaches the absolute end of the book text
+            if end == chars.len() {
+                break;
+            }
+
+            // Move the window forward by the stride distance
+            start += chunk_size - chunk_overlap;
+        }
+
+        // Return the compile list of chunks to Python
+        Ok(chunks)
+    }
+}
+</file>
+
+<file path="LICENSE.md">
+MIT License
+
+Copyright (c) 2026 Roy Peters
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+</file>
+
+<file path="pyproject.toml">
+[project]
+name = "rag-technical-app"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+    "chromadb>=1.5.8",
+    "langchain>=1.2.16",
+    "langchain-chroma>=1.1.0",
+    "langchain-community>=0.4.1",
+    "langchain-core>=1.3.2",
+    "langchain-google-genai>=4.2.2",
+    "langchain-huggingface>=1.2.2",
+    "onnxruntime==1.19.2",
+    "opentelemetry-exporter-otlp-proto-grpc==1.11.1",
+    "protobuf<4.0.0",
+    "pypdf>=6.10.2",
+    "python-dotenv>=1.2.2",
+    "sentence-transformers>=5.4.1",
+    "streamlit>=1.57.0",
+]
+</file>
+
+<file path="app.py">
+import streamlit as st
+import os
+from dotenv import load_dotenv
+from langchain_chroma import Chroma
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_core.prompts import ChatPromptTemplate
+from guardrail import RAGGuardrail
+import warnings
+
+# Block Python's internal warnings if not fatal
+warnings.filterwarnings("ignore", category=FutureWarning)
+
+# Tell Transformers to only talk if it's a serious Error
+os.environ["TRANSFORMERS_VERBOSITY"] = "error"
+os.environ["STREAMLIT_LOG_LEVEL"] = "error"
+
+# Load environment variables
+load_dotenv()
+
+# Page configuration - tab title and icon
+st.set_page_config(page_title="Roy Peters", page_icon="😁", layout="centered")
+
+# CUSTOM UI THEME + HEADER
+st.markdown(
+    """
+    <style>
+    .stApp {
+        background-color: #e6f2ff;
+        background-image: linear-gradient(to bottom right, #e6f2ff, #cce0ff);
+        font-family: 'Segoe UI', sans-serif;
+    }
+    h1 {
+        color: #1a1a1a;
+        text-align: center;
+        font-weight: 700;
+        margin-bottom: 0.2rem;
+    }
+    h3 {
+        color: #004080;
+        text-align: center;
+        font-weight: 500;
+        margin-top: 0rem;
+    }
+    .badge-container {
+        text-align: center;
+        margin-bottom: 25px;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+st.markdown("<h1>RAG Library AI</h1>", unsafe_allow_html=True)
+st.markdown("<h3>Ask anything based on Python.</h3>", unsafe_allow_html=True)
+
+# Python library badges
+st.markdown(
+    """
+    <div class="badge-container">
+        <img src="https://img.shields.io/badge/NumPy-013243?style=for-the-badge&logo=numpy&logoColor=white">
+        <img src="https://img.shields.io/badge/Pandas-150458?style=for-the-badge&logo=pandas&logoColor=white">
+        <img src="https://img.shields.io/badge/Matplotlib-11557c?style=for-the-badge&logo=plotly&logoColor=white">
+        <img src="https://img.shields.io/badge/TensorFlow-FF6F00?style=for-the-badge&logo=tensorflow&logoColor=white">
+        <img src="https://img.shields.io/badge/PyTorch-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white">
+        <img src="https://img.shields.io/badge/scikit--learn-F7931E?style=for-the-badge&logo=scikit-learn&logoColor=white">
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+# --- HELPER FUNCTIONS ---
+def clear_text_callback():
+    """Reset the input field using a callback to avoid StreamlitAPIException"""
+    st.session_state["query_input"] = ""
+
+def format_docs(docs):
+    """Converts Document objects into plain text for the LLM."""
+    return "\n\n".join(doc.page_content for doc in docs)
+
+# 
+@st.cache_resource
+def load_rag_components():
+    """Setup and cache individual RAG components for precise control."""
+    embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+    vector_db = Chroma(persist_directory="vectorstore/db", embedding_function=embeddings)
+    retriever = vector_db.as_retriever(search_kwargs={"k": 3})
+
+    llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0)
+
+    prompt = ChatPromptTemplate.from_template("""
+    Answer based only on the provided context. If the answer isn't in the context, say so.
+
+    Context: {context}
+    Question: {question}
+    """)
+
+    # Instantiate our local guardrail checker (Threshold set to 60%)
+    guardrail = RAGGuardrail(threshold=0.60)
+
+    return retriever, prompt, llm, guardrail
+
+# Unbundle components instead of using a collapsed chain linear pipeline
+retriever, prompt_template, llm, guardrail = load_rag_components()
+
+# --- CHAT INTERFACE ---
+col1, col2 = st.columns([5, 1])
+
+with col1:
+    # Adding a key allows us to clear the input via session_state
+    user_query = st.text_input("💬 Please enter your question:", key="query_input")
+
+with col2:
+    st.write("##") 
+    # Use on_click callback. This runs BEFORE the next script execution,
+    # allowing us to modify the state safely.
+    st.button("Clear 🗑️", on_click=clear_text_callback)
+
+# Processing the query
+if user_query:
+    with st.spinner("🔎 Searching the books and verfying facts..."):
+        try:
+            # Fetch relevant pages from the 3 books explicitly
+            matched_docs = retriever.invoke(user_query)
+            context_text = format_docs(matched_docs)
+
+            if not context_text.strip():
+                st.warning("🤖 The vector database could not find relevant content in the books.")
+            
+            else:
+                # Format the custom prompt structure manually
+                formatted_prompt = prompt_template.format(context=context_text, question=user_query)
+
+                # Generate raw prediction from Gemini
+                raw_response = llm.invoke(formatted_prompt).content
+
+                # Push the response through the local Semantic Guardrail Filter
+                is_safe, evaluation_score = guardrail.is_grounded(context_text, raw_response)
+
+                # Route output determinstically based on factual similarity
+                st.subheader("🤖 AI Response:")
+                if is_safe:
+                    st.write(raw_response)
+                    st.caption(f"🛡️ Guardrail passed (Score: {evaluation_score:.2f})")
+                
+                else:
+                    st.error(
+                        "⚠️ Response Intercepted: "
+                        "The AI attempted to hallucinate non-existent syntax or returned " 
+                        "incoherent text patterns ungrounded by the books"
+                    )
+                    with st.expander("See details of the blocked response"):
+                        st.write(f"**Semantic Alignment Score:** {evaluation_score:.2f} (Required: >= 0.72)")
+                        st.write(f"**Raw Intercepted Text:** {raw_response}")
+
+        except Exception as e:
+            st.error(f"An error occurred: {e}")
+</file>
+
+<file path="ingest.py">
+import os
+import fast_chunker  # The Rust module
+from langchain_community.document_loaders import PyPDFLoader
+from langchain_chroma import Chroma
+from langchain_core.documents import Document
+from langchain_huggingface import HuggingFaceEmbeddings
+
+# Configuration setup
+DATA_PATH = "data/books"  # Put PDFs in a folder named data/books
+DB_PATH = "vectorstore/db"  # Database
+
+
+def run_ingestion():
+    """Load PDF from the data folder"""
+
+    # Ensure the directory exists
+    if not os.path.exists(DATA_PATH):
+        print(f"❌ Error: Please create the {DATA_PATH} folder and add your PDFs.")
+        return
+
+    # Load PDFs
+    print("🚀 Loading documents")
+    documents = []
+    for file in os.listdir(DATA_PATH):
+        if file.endswith(".pdf"):
+            print(f"Loading: {file}")
+            loader = PyPDFLoader(os.path.join(DATA_PATH, file))
+            documents.extend(loader.load())
+
+    # Rust Implementation Chunking Sequence
+    print("🪓Spliting into chunks using Rust engine")
+    chunks = []
+
+    for doc in documents:
+        raw_chunks = fast_chunker.chunk_text(
+            doc.page_content, chunk_size=1000, chunk_overlap=150
+        )
+
+        # Take the raw string chunks from Rust and rebuild LaingChain documents
+        for chunk_text in raw_chunks:
+            chunks.append(
+                Document(page_content=chunk_text, metadata=doc.metadata.copy())
+            )
+
+    print(f"✅ Created {len(chunks)} text chunks via Rust.")
+
+    # Vectorising - turn the text into math
+    print("Embedding and storing")
+
+    # Use an AI model for embedding and storing of data
+    embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+
+    # Create and update the database, save to disk
+    vector_db = Chroma.from_documents(
+        # Feeds the small pieces of split text into the database
+        # to be indexed and stored for searching.
+        documents=chunks,
+        # Tells the database which model to use for converting
+        # text into searchable numerical values.
+        embedding=embeddings,
+        # Sets the folder where the database is saved to disk
+        # so the data isn't lost when the script stops.
+        persist_directory=DB_PATH,
+    )
+
+    # Use the vector_db variable to verify the collection count
+    collection_count = vector_db._collection.count()
+    print(f"📊 Database now contains {collection_count}")
+
+    print(f"✅ Success! Knowledge base saved to {DB_PATH}")
+
+
+if __name__ == "__main__":
+    run_ingestion()
+</file>
+
+<file path="query.py">
+from dotenv import load_dotenv
+from langchain_chroma import Chroma
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_core.prompts import ChatPromptTemplate
+from guardrail import RAGGuardrail
+
+load_dotenv()
+
+DB_PATH = "vectorstore/db"
+
+
+def format_docs(docs):
+    """Converts Document objects into plain text for the LLM."""
+    return "\n\n".join(doc.page_content for doc in docs)
+
+
+def ask_the_books(question):
+    """
+    Query the loaded books with the given questions,
+    intercept hallucinations via guardrails, and return verified answers.
+    """
+    # Initialize RAG components individually
+    embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+    vector_db = Chroma(persist_directory=DB_PATH, embedding_function=embeddings)
+    llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0)
+    retriever = vector_db.as_retriever(search_kwargs={"k": 3})
+
+    prompt_template = ChatPromptTemplate.from_template("""
+    Answer based only on the provided context. If the answer isn't in the context, say so.
+
+    Context: {context}
+    Question: {question}
+    """)
+
+    # Instantiate our Guardrail Engine (matching the Streamlit threshold)
+    guardrail = RAGGuardrail(threshold=0.60)
+
+    print(f"\n🔎 Searching the books for: '{question}'...")
+    
+    try:
+        # Fetch context chunks explicitly from the vector DB
+        matched_docs = retriever.invoke(question)
+        context_text = format_docs(matched_docs)
+
+        if not context_text.strip():
+            print("🤖 AI RESPONSE:\nThe vector database couldn't find relevant context in the books.")
+            return
+
+        # Format the raw text context into the prompt blueprint
+        formatted_prompt = prompt_template.format(context=context_text, question=question)
+
+        # Call Gemini to get the prediction text
+        raw_response = llm.invoke(formatted_prompt).content
+
+        # Audit the output using our semantic guardrail
+        is_safe, evaluation_score = guardrail.is_grounded(context_text, raw_response)
+
+        # Route terminal output based on factual score metrics
+        print("\n🤖 AI RESPONSE:")
+        if is_safe:
+            print(raw_response)
+            print(f"\n 🛡️  Guardrail status: PASSED (Factual Score: {evaluation_score:.2f})")
+        else:
+            print("⚠️  [BLOCKED] Response failed accuracy check! The model attempted to hallucinate non-existent information or generated garbage text.")
+            print(f"👉 Score: {evaluation_score:.2f} (Required: >= 0.60)")
+            print(f"👉 Raw Blocked Output: {raw_response}")
+
+    except Exception as e:
+        print(f"❌ An error occurred during processing: {e}")
+
+
+if __name__ == "__main__":
+    user_query = input("\n🤖 What would you like to ask your Python books? ")
+    if user_query.strip():
+        ask_the_books(user_query)
+</file>
+
+<file path=".gitignore">
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environments
+venv/
+.venv/
+ENV/
+
+# Streamlit
+#.streamlit/config.toml
+.streamlit/secrets.toml
+
+# Environment variables
+.env
+.flaskenv
+
+rag_library_ai_deploy/
+
+# Large Data files
+# data/books/*.pdf
+
+# IDEs
+.vscode/
+.idea/
+
+# OS specific
+.DS_Store
+Thumbs.db
+</file>
+
+<file path="requirements.txt">
+streamlit
+langchain
+langchain-chroma
+langchain-google-genai
+langchain-huggingface
+langchain-community
+chromadb
+sentence-transformers
+pypdf
+python-dotenv
+maturin
+https://huggingface.co/spaces/reory/rag-library-ai/resolve/main/fast_chunker-0.1.0-cp310-abi3-manylinux_2_34_x86_64.whl
+</file>
+
+<file path="README.md">
+# 🏡 Rag-Technical-App
+
+![Last Commit](https://img.shields.io/github/last-commit/yourusername/rag-technical-app?cacheSeconds=60)
+![Repo Size](https://img.shields.io/github/repo-size/yourusername/rag-technical-app?cacheSeconds=60)
+![License](https://img.shields.io/badge/License-MIT-green)
+
+![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
+![Chromadb](https://img.shields.io/badge/Chromadb-3F4F75?style=for-the-badge)
+![Langchain](https://img.shields.io/badge/Langchain-3F4F75?style=for-the-badge)
+![Langchain-Chroma](https://img.shields.io/badge/Langchain-Chroma-3F4F75?style=for-the-badge)
+![Langchain-Community](https://img.shields.io/badge/Langchain-Community-3F4F75?style=for-the-badge)
+![Langchain-Core](https://img.shields.io/badge/Langchain-Core-3F4F75?style=for-the-badge)
+![Langchain-Google-Genai](https://img.shields.io/badge/Langchain-Google-Genai-3F4F75?style=for-the-badge)
+![Langchain-Huggingface](https://img.shields.io/badge/Langchain-Huggingface-3F4F75?style=for-the-badge)
+![Onnxruntime](https://img.shields.io/badge/Onnxruntime-3F4F75?style=for-the-badge)
+![Opentelemetry-Exporter-Otlp-Proto-Grpc](https://img.shields.io/badge/Opentelemetry-Exporter-Otlp-Proto-Grpc-3F4F75?style=for-the-badge)
+![Protobuf<4.0.0](https://img.shields.io/badge/Protobuf<4.0.0-3F4F75?style=for-the-badge)
+![Pypdf](https://img.shields.io/badge/Pypdf-3F4F75?style=for-the-badge)
+![Python-Dotenv](https://img.shields.io/badge/Python-Dotenv-3F4F75?style=for-the-badge)
+![Sentence-Transformers](https://img.shields.io/badge/Sentence-Transformers-3F4F75?style=for-the-badge)
+![Streamlit](https://img.shields.io/badge/Streamlit-3F4F75?style=for-the-badge)
+
+
+A Python project
+
+---
+## 📸 Screenshots
+
+Light Mode
+![Light Mode](screenshots/lightmode.png)
+
+Dark Mode
+![Dark Mode](screenshots/darkmode.png)
+
+---
+## 🚀 Key Features
+
+- **Automated Workspace Analysis**: Inspects repository paths using robust system mapping arrays.
+- **Abstract Syntax Parsing**: Processes Python scripts through compilation trees to capture docstrings accurately.
+- **Dynamic Metadata Compilation**: Builds uniform software documentation blueprints automatically.
+
+---
+## 📁 Project Structure
+The project architecture is structured for scalability, featuring isolated scanning, processing, and documentation assembly engines.
+
+```python
+rag_library_ai/
+├── app.py                     # Core module logic.
+├── ingest.py                  # Core module logic.
+├── query.py                   # Core module logic.
+│   ├── __init__.py            # Core module logic.
+│   ├── app.py                 # Core module logic.
+│   ├── conftest.py            # Core module logic.
+│   ├── ingest.py              # Core module logic.
+│   ├── query.py               # Core module logic.
+│   ├── test_app.py            # Core module logic.
+│   ├── test_fast_chunker.py   # Core module logic.
+│   ├── test_ingest.py         # Core module logic.
+│   ├── test_query.py          # Core module logic.
+│   │   ├── __init__.py        # Core module logic.
+│   │   ├── conftest.py        # Core module logic.
+│   │   ├── test_app.py        # Core module logic.
+│   │   ├── test_fast_chunker.py # Core module logic.
+│   │   ├── test_ingest.py     # Core module logic.
+│   │   └── test_query.py      # Core module logic.
+```
+
+---
+## 🚀 Getting Started
+- Prerequisites: Python 3.11 or higher, pip package manager.
+
+### Installation
+
+```bash
+git clone <your-repository-url>
+cd rag-technical-app
+```
+
+### Set up the Virtual Environment:
+
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows use: venv\Scripts\activate
+```
+
+### Install Dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+### Launch the Tool:
+
+```bash
+python app.py
+```
+
+---
+## 🔬 Troubleshooting
+
+- **Virtual Environment Missing?** Ensure you activated your `venv` instance before calling `python app.py`.
+- **Configuration Overrides?** Add custom block components inside `pyproject.toml` to instantly update parameters.
+
+---
+## 🛣️ Roadmap Features
+
+- [x] Parse project directory layout and establish ignore safety gates.
+- [x] Extract core configuration details via localized TOML compilation units.
+- [ ] Integrate lightweight transformer API nodes to enhance software summary statements automatically.
+- [ ] Export custom front-end presentation cards highlighting code composition metrics.
+
+---
+* **Built by Roy Peters** 🙂
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Roy%20Peters-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/roy-p-74980b382/)
+</file>
+
+</files>
