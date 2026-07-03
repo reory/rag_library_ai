@@ -1,4 +1,4 @@
-# 🏡 Rag-Library-AI
+# 🏡 Rag_Library_AI
 
 ![Last Commit](https://img.shields.io/github/last-commit/reory/rag_library_ai?cacheSeconds=60)
 ![Repo Size](https://img.shields.io/github/repo-size/reory/rag_library_ai?cacheSeconds=60)
