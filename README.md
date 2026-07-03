@@ -10,7 +10,7 @@
 ![Rust](https://img.shields.io/badge/rust-%23000000.svg?style=for-the-badge&logo=rust&logoColor=white)
 ![LangChain](https://img.shields.io/badge/LangChain-1C3C3C?style=for-the-badge&logo=langchain&logoColor=white)
 
-An ultra-fast, hallucination-resistant Retrieval-Augmented Generation (RAG) system built to query technical documentation. This project uses a custom high-speed text chunker written in Rust (via PyO3) for parsing, ChromaDB for vector storage, Gemini 2.5 Flash as the reasoning core, and a mathematical Semantic Guardrail Filter to completely intercept and block AI hallucinations.
+This project is a Retrieval-Augmented Generation (RAG) application designed to act as an intelligent librarian. By indexing technical Python books, it allows users to ask complex questions and receive answers grounded in the specific text of those books, complete with context.
 
 ---
 
