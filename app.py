@@ -1,12 +1,14 @@
-import streamlit as st
 import os
+import warnings
+
+import streamlit as st
 from dotenv import load_dotenv
 from langchain_chroma import Chroma
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_core.prompts import ChatPromptTemplate
+
 from guardrail import RAGGuardrail
-import warnings
 
 # Block Python's internal warnings if not fatal
 warnings.filterwarnings("ignore", category=FutureWarning)
@@ -78,7 +80,6 @@ def format_docs(docs):
     """Converts Document objects into plain text for the LLM."""
     return "\n\n".join(doc.page_content for doc in docs)
 
-# 
 @st.cache_resource
 def load_rag_components():
     """Setup and cache individual RAG components for precise control."""
@@ -150,7 +151,7 @@ if user_query:
                         "incoherent text patterns ungrounded by the books"
                     )
                     with st.expander("See details of the blocked response"):
-                        st.write(f"**Semantic Alignment Score:** {evaluation_score:.2f} (Required: >= 0.72)")
+                        st.write(f"**Semantic Alignment Score:** {evaluation_score:.2f} (Required: >= {guardrail.threshold:.2f})")
                         st.write(f"**Raw Intercepted Text:** {raw_response}")
 
         except Exception as e:

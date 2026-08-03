@@ -1,8 +1,9 @@
 # Unit tests for the Rust chunker, with a skip if the module isn’t available.
 
 
-import fast_chunker
 import pytest
+
+import fast_chunker
 
 pytestmark = pytest.mark.skipif(
     pytest.importorskip("fast_chunker", reason="fast_chunker wheel not available")

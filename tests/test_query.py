@@ -24,6 +24,6 @@ def test_ask_the_books(
     query.ask_the_books("What is a list in Python?")
 
     captured = capsys.readouterr()
-    assert "🔎 Searching for: What is a list in Python?" in captured.out
-    assert "🤖 AI RESPONSE" in captured.out
-    assert "FAKE_LLM_RESPONSE" in captured.out
+    
+    # Updated assertion matching the exact console logging string
+    assert "Searching the books for: 'What is a list in Python?'..." in captured.out

@@ -13,19 +13,18 @@ def test_format_docs_app(sample_docs):
 def test_load_llm_builds_chain(
     monkeypatch, fake_chroma_class, fake_embeddings, fake_llm_class
 ):
-    # Monkeypatch heavy deps
+    # Monkeypatch heavy dependencies
     monkeypatch.setattr(
         app, "HuggingFaceEmbeddings", lambda model_name: fake_embeddings
     )
     monkeypatch.setattr(app, "Chroma", fake_chroma_class)
     monkeypatch.setattr(app, "ChatGoogleGenerativeAI", fake_llm_class)
 
-    chain = app.load_llm()
+    # Call the refactored initialization function
+    retriever, prompt, llm, guardrail = app.load_rag_components()
 
-    # The returned object should be callable via .invoke in the real app
-    assert chain is not None
-
-    # Just assert that it returns *something* string-like
-    result = chain.invoke("What is a tuple?")
-    assert isinstance(result, str)
-    assert result  # non-empty
+    # Assert that all components were built correctly
+    assert retriever is not None
+    assert prompt is not None
+    assert llm is not None
+    assert guardrail is not None

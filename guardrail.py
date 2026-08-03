@@ -1,6 +1,7 @@
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 
+
 class RAGGuardrail:
     def __init__(self, threshold=0.60):
         """
@@ -15,6 +16,9 @@ class RAGGuardrail:
             "isn't in the context",
             "is not in the context",
             "not mentioned in the context",
+            "does not provide",
+            "does not mention",
+            "does not contain",
             "i am sorry",
             "cannot answer"
         ]

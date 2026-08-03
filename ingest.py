@@ -1,9 +1,11 @@
 import os
-import fast_chunker  # The Rust module
-from langchain_community.document_loaders import PyPDFLoader
+
 from langchain_chroma import Chroma
+from langchain_community.document_loaders import PyPDFLoader
 from langchain_core.documents import Document
 from langchain_huggingface import HuggingFaceEmbeddings
+
+import fast_chunker  # The Rust module
 
 # Configuration setup
 DATA_PATH = "data/books"  # Put PDFs in a folder named data/books
