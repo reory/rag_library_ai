@@ -3,7 +3,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 
 class RAGGuardrail:
-    def __init__(self, threshold=0.60):
+    def __init__(self, threshold=0.55):
         """
         Initialises a local embedding model to audit the RAG outputs.
         Using the same embedding model as the rest of the application.
