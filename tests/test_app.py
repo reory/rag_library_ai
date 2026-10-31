@@ -1,10 +1,12 @@
-# Focus on format_docs and load_llm from app.py,
-# mocking heavy dependencies so system does not hit real Chroma or Gemini.
+"""Focus on format_docs and load_llm from app.py,
+mocking heavy dependencies so system does not hit real Chroma or Gemini."""
 
 import app
 
 
 def test_format_docs_app(sample_docs):
+    """Verify documents are formatted correctly."""
+
     text = app.format_docs(sample_docs)
     assert "Python lists are mutable" in text
     assert "Tuples are immutable" in text
@@ -12,7 +14,9 @@ def test_format_docs_app(sample_docs):
 
 def test_load_llm_builds_chain(
     monkeypatch, fake_chroma_class, fake_embeddings, fake_llm_class
-):
+):  
+    """Verify the LLM retrieval chain is created successfully."""
+
     # Monkeypatch heavy dependencies
     monkeypatch.setattr(
         app, "HuggingFaceEmbeddings", lambda model_name: fake_embeddings

@@ -4,13 +4,50 @@
 ![Repo Size](https://img.shields.io/github/repo-size/reory/rag_library_ai?cacheSeconds=60)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
-![Streamlit](https://img.shields.io/badge/Streamlit-3F4F75?style=for-the-badge)
-![Scikit-Learn](https://img.shields.io/badge/scikit--learn-%23F7931E.svg?style=for-the-badge&logo=scikit-learn&logoColor=white)
-![Rust](https://img.shields.io/badge/rust-%23000000.svg?style=for-the-badge&logo=rust&logoColor=white)
 ![LangChain](https://img.shields.io/badge/LangChain-1C3C3C?style=for-the-badge&logo=langchain&logoColor=white)
+![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
+![Rust](https://img.shields.io/badge/rust-%23000000.svg?style=for-the-badge&logo=rust&logoColor=white)
+![Scikit-Learn](https://img.shields.io/badge/scikit--learn-%23F7931E.svg?style=for-the-badge&logo=scikit-learn&logoColor=white)
+![Streamlit](https://img.shields.io/badge/Streamlit-3F4F75?style=for-the-badge)
 
 This project is a Retrieval-Augmented Generation (RAG) application designed to act as an intelligent librarian. By indexing technical Python books, it allows users to ask complex questions and receive answers grounded in the specific text of those books, complete with context.
+
+---
+
+## 📑 Table of Contents
+
+| Section | Link |
+|----------|----------|
+| Problem | [The Problem](#-the-problem) |
+| Solution | [The Solution](#-the-solution) |
+| Screenshots | [Screenshots](#-screenshots) |
+| Key Features | [Key Features](#-features) |
+| Project Structure | [Project Structure](#-project-structure) |
+| Getting Started | [Getting Started](#-getting-started) |
+| Usage | [Usage](#-usage) |
+| Testing | [Testing](#-pytest) |
+| Hallucination Guardrail | [Hallucination Guardrail](#️-how-the-hallucination-guardrail-works) |
+| Roadmap Features | [Roadmap Features](#️-roadmap) |
+
+---
+
+## 🚨 The Problem
+
+Large language models can generate useful responses, but they are limited to the information available during training. This can lead to outdated, incomplete, or unverified answers when working with external knowledge sources.
+
+## ✅ The Solution
+
+This RAG AI Agent combines retrieval and generation to provide grounded responses using external documents and datasets. By retrieving relevant context before generation, the system helps improve accuracy, reduce hallucinations, and deliver more reliable answers.
+
+---
+
+## 🎯 Why This Project Exists
+
+Many RAG systems can retrieve relevant documents but still produce incorrect, misleading, or hallucinated responses.
+
+This project explores how retrieval systems can be combined with lightweight semantic verification techniques to improve answer reliability.
+
+The goal was not simply to build another RAG assistant, but to investigate methods for detecting and reducing hallucinations using local embeddings and mathematical similarity checks.
 
 ---
 
@@ -136,15 +173,28 @@ class RAGGuardrail:
 
 ---
 
+## 🧪 Pytest
+- Type in the terminal
+```bash
+python -m pytest
+```
+---
+
 ## 🛣️ Roadmap Features
 
 - [x] High-speed Rust text chunking integration (`fast_chunker`).
 - [x] Core Streamlit Web UI and CLI query processing pipelines.
-- [x] Mathematical Semantic Guardrail Filter (Cosine Similarity Verification).
-- [ ] **Self-Correction Loop:** Automatically re-prompt Gemini to fix answers if the guardrail filter detects a hallucination.
-- [ ] **Conversational Memory:** Store message history in Streamlit session state to support continuous multi-turn chat dialogues.
-- [ ] **Source Citation:** Extract and display document metadata (Book Title, Page Numbers) immediately below verified answers.
-- [ ] **Semantic Input Routing:** Block or redirect out-of-scope user prompts upstream before triggering database or LLM resources.
+- [x] Semantic Guardrail Verification (Cosine Similarity Verification).
+- [ ] Source Citation
+Display document names and source references alongside answers.
+- [ ] Conversational Memory
+Support multi-turn discussions using Streamlit session state.
+- [ ] Semantic Input Routing
+Reject out-of-scope questions before retrieval.
+- [ ] Self-Correction Loop
+Retry responses when guardrail verification fails.
+- [ ] Multi-Document Knowledge Graph
+Link related concepts across documents to improve retrieval.
 
 ---
 

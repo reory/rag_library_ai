@@ -1,5 +1,7 @@
-# Mock out PyPDFLoader, fast_chunker.chunk_text,
-# HuggingFaceEmbeddings, and Chroma so ingestion is fast and deterministic.
+"""
+Mock out PyPDFLoader, fast_chunker.chunk_text,
+HuggingFaceEmbeddings, and Chroma so ingestion is fast and deterministic.
+"""
 
 # tests/test_ingest.py
 import types
@@ -10,6 +12,8 @@ import ingest
 def test_run_ingestion_happy_path(
     monkeypatch, tmp_path, fake_chroma_class, fake_embeddings
 ):
+    """Verify successful ingestion of documents."""
+ 
     # Create fake DATA_PATH with a dummy PDF filename
     data_dir = tmp_path / "data" / "books"
     data_dir.mkdir(parents=True)
@@ -53,6 +57,8 @@ def test_run_ingestion_happy_path(
 
 
 def test_run_ingestion_missing_data_folder(monkeypatch, tmp_path, capsys):
+    """Verify ingestion fails when the data folder is missing."""
+
     # Point DATA_PATH to a non-existent folder
     missing_dir = tmp_path / "nope"
     monkeypatch.setattr(ingest, "DATA_PATH", str(missing_dir))

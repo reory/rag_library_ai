@@ -1,5 +1,7 @@
 from dotenv import load_dotenv
+from google.api_core.exceptions import GoogleAPIError
 from langchain_chroma import Chroma
+from langchain_core.exceptions import LangChainException
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_huggingface import HuggingFaceEmbeddings
@@ -21,6 +23,7 @@ def ask_the_books(question):
     Query the loaded books with the given questions,
     intercept hallucinations via guardrails, and return verified answers.
     """
+
     # Initialize RAG components individually
     embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
     vector_db = Chroma(persist_directory=DB_PATH, embedding_function=embeddings)
@@ -67,7 +70,12 @@ def ask_the_books(question):
             print(f"👉 Score: {evaluation_score:.2f} (Required: >= 0.60)")
             print(f"👉 Raw Blocked Output: {raw_response}")
 
-    except Exception as e:
+    except (
+        LangChainException,
+        GoogleAPIError,
+        ValueError,
+        RuntimeError,
+    ) as e:
         print(f"❌ An error occurred during processing: {e}")
 
 

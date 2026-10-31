@@ -147,6 +147,8 @@ def fake_chroma_class(sample_docs):
 
         @classmethod
         def from_documents(cls, documents, embedding, persist_directory=None):
+            """Create a test vector store from documents."""
+
             inst = cls(
                 persist_directory=persist_directory, embedding_function=embedding
             )
@@ -155,6 +157,8 @@ def fake_chroma_class(sample_docs):
             return inst
 
         def as_retriever(self, search_kwargs=None):
+            """Return a retriever for the stored test documents."""
+
             return FakeRetriever(self._docs)
 
     return FakeChroma

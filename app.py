@@ -3,7 +3,9 @@ import warnings
 
 import streamlit as st
 from dotenv import load_dotenv
+from google.api_core.exceptions import GoogleAPIError
 from langchain_chroma import Chroma
+from langchain_core.exceptions import LangChainException
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_huggingface import HuggingFaceEmbeddings
@@ -74,15 +76,18 @@ st.markdown(
 # --- HELPER FUNCTIONS ---
 def clear_text_callback():
     """Reset the input field using a callback to avoid StreamlitAPIException"""
+
     st.session_state["query_input"] = ""
 
 def format_docs(docs):
     """Converts Document objects into plain text for the LLM."""
+
     return "\n\n".join(doc.page_content for doc in docs)
 
 @st.cache_resource
 def load_rag_components():
     """Setup and cache individual RAG components for precise control."""
+
     embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
     vector_db = Chroma(persist_directory="vectorstore/db", embedding_function=embeddings)
     retriever = vector_db.as_retriever(search_kwargs={"k": 3})
@@ -154,5 +159,10 @@ if user_query:
                         st.write(f"**Semantic Alignment Score:** {evaluation_score:.2f} (Required: >= {guardrail.threshold:.2f})")
                         st.write(f"**Raw Intercepted Text:** {raw_response}")
 
-        except Exception as e:
+        except (
+            LangChainException,
+            GoogleAPIError,
+            ValueError,
+            RuntimeError,
+        ) as e:
             st.error(f"An error occurred: {e}")

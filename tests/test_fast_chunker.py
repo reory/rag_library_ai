@@ -1,30 +1,41 @@
-# Unit tests for the Rust chunker, with a skip if the module isn’t available.
-
+"""Unit tests for the Rust chunker."""
 
 import pytest
 
-import fast_chunker
-
-pytestmark = pytest.mark.skipif(
-    pytest.importorskip("fast_chunker", reason="fast_chunker wheel not available")
-    is None,
-    reason="fast_chunker not importable",
+fast_chunker = pytest.importorskip(
+    "fast_chunker",
+    reason="fast_chunker package not available",
 )
+
+# Skip if the Rust extension isn't exposed correctly.
+if not hasattr(fast_chunker, "chunk_text"):
+    pytest.skip(
+        "Rust chunk_text function not available",
+        allow_module_level=True,
+    )
 
 
 def test_chunk_text_basic():
-    import fast_chunker
+    """Verify text is split into valid chunks."""
 
     text = "abcdefghijklmnopqrstuvwxyz"
-    chunks = fast_chunker.chunk_text(text, chunk_size=10, chunk_overlap=2)
+    chunks = fast_chunker.chunk_text(
+        text,
+        chunk_size=10,
+        chunk_overlap=2,
+    )
 
-    # Should produce overlapping chunks
     assert len(chunks) >= 2
     assert chunks[0].startswith("a")
-    assert chunks[1][0] in chunks[0]  # overlap
+    assert chunks[1][0] in chunks[0]
 
 
 def test_chunk_text_overlap_guard():
+    """Verify chunk overlap values are validated."""
 
-    with pytest.raises(Exception):
-        fast_chunker.chunk_text("abc", chunk_size=10, chunk_overlap=10)
+    with pytest.raises(ValueError):
+        fast_chunker.chunk_text(
+            "abc",
+            chunk_size=10,
+            chunk_overlap=10,
+        )

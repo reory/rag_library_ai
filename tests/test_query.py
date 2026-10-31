@@ -1,10 +1,12 @@
-# Test the CLI-style query pipeline by mocking Chroma, embeddings, and LLM
+"""Test the CLI-style query pipeline by mocking Chroma, embeddings, and LLM"""
 
 # tests/test_query.py
 import query
 
 
 def test_format_docs(sample_docs):
+    """Verify document formatting output."""
+
     text = query.format_docs(sample_docs)
     assert "Python lists are mutable" in text
     assert "Tuples are immutable" in text
@@ -14,6 +16,8 @@ def test_format_docs(sample_docs):
 def test_ask_the_books(
     monkeypatch, fake_chroma_class, fake_embeddings, fake_llm_class, capsys
 ):
+    """Ensure book queries return expected results."""
+
     # Monkeypatch dependencies
     monkeypatch.setattr(
         query, "HuggingFaceEmbeddings", lambda model_name: fake_embeddings
