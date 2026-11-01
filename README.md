@@ -122,7 +122,7 @@ source venv/bin/activate
 This automatically installs the specialized, pre-compiled fast_chunker Linux/Windows target wheel along with core frameworks:
 
 ```Bash
-uv pip install -r requirements.txt
+uv sync
 ```
 ### Environment Variables Configuration
 - Create a .env file in the root directory to store your API credentials locally:
