@@ -87,7 +87,7 @@ rag-technical-app/
 ├── query.py               # Command-line (CLI) interaction utility
 ├── ingest.py              # PDF Parsing and Vector Store Ingestion engine
 ├── guardrail.py           # Semantic Guardrail verification system
-├── requirements.txt       # Python environment dependencies
+├── pyproject.toml         # Python environment dependencies
 ├── tests/                 # Pytest suite
 └── .gitignore             # Git exclusion parameters  
 ```
