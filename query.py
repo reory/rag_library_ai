@@ -1,12 +1,11 @@
 from dotenv import load_dotenv
 from google.api_core.exceptions import GoogleAPIError
+from guardrail import RAGGuardrail
 from langchain_chroma import Chroma
 from langchain_core.exceptions import LangChainException
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_huggingface import HuggingFaceEmbeddings
-
-from guardrail import RAGGuardrail
 
 load_dotenv()
 

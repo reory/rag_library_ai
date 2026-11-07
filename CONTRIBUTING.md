@@ -1,37 +1,151 @@
-# Contributing to RAG Library AI
+# 🤝 Contributing to RAG Library AI
 
-First off, thank you for considering contributing!
+Thank you for your interest in contributing.
 
-## How Can I Contribute?
+RAG Library AI is an experimental Retrieval-Augmented Generation (RAG) application focused on grounded responses, semantic verification, and hallucination reduction. Contributions that improve reliability, performance, testing, documentation, and user experience are always welcome.
 
-### Reporting Bugs
-* Check the Issues tab to see if the bug has already been reported.
-* If not, open a new issue with a clear title and a description of how to reproduce the error.
+---
 
-### Suggesting Enhancements
-* We are always looking to improve the RAG pipeline! 
-* Suggestions for better chunking strategies or new LLM integrations are welcome.
+## ⚒️ Getting Started
 
-### Pull Requests
-1. **Fork** the repository.
-2. **Create a branch** for your feature (`git checkout -b feature/AmazingFeature`).
-3. **Set up your environment**:
-   - Install dependencies: `pip install -r requirements.txt`
-   - Set up your `.env` with a `GOOGLE_API_KEY`.
-4. **Commit your changes** (`git commit -m 'Add some AmazingFeature'`).
-5. **Push to the branch** (`git push origin feature/AmazingFeature`).
-6. **Open a Pull Request**.
+### Clone the Repository
 
-## Technical Stack
+```bash
+git clone https://github.com/reory/rag_library_ai.git
+cd rag_library_ai
+```
+
+### Install Dependencies
+
+```bash
+uv sync
+```
+
+### Configure Environment Variables
+
+Create a `.env` file in the project root:
+
+```text
+GOOGLE_API_KEY=your_api_key_here
+```
+
+### Ingest Documents
+
+Build the vector database from your source documents:
+
+```bash
+python ingest.py
+```
+
+### Run the Application
+
+```bash
+streamlit run app.py
+```
+
+---
+
+## 🧩 Contribution Guidelines
+
+Please keep contributions:
+
+- Small and focused
+- Well documented
+- Consistent with the existing code style
+- Backed by tests where practical
+- Aligned with the project's goals
+
+### ✅ Good Contributions
+
+- Bug fixes
+- New tests
+- Documentation improvements
+- Performance enhancements
+- User interface improvements
+- Guardrail improvements
+- Roadmap features
+
+### ❌ Please Avoid
+
+- Large unrelated changes in a single pull request
+- Unnecessary dependencies
+- Breaking existing functionality
+- Major refactors without discussion
+
+---
+
+## 👨🏽‍💻 Development Notes
+
+### Core Technologies
+
 This project uses:
-* **Streamlit** for the UI.
-* **LangChain** for the RAG orchestration.
-* **ChromaDB** for vector storage.
-* **Gemini 2.5 Flash** as the primary LLM.
 
-## Coding Standards
-* Please follow PEP 8 guidelines for Python code.
-* Ensure any new dependencies are added to `requirements.txt` or `pyproject.toml`
+- Streamlit
+- LangChain
+- ChromaDB
+- Google Gemini
+- Sentence Transformers
+- Rust (PyO3) via `fast_chunker`
 
-## License
-By contributing, you agree that your contributions will be licensed under the project's MIT License.
+### Rust Components
+
+The `fast_chunker` package is used to accelerate document splitting during ingestion.
+
+Contributors modifying the Rust implementation should ensure the package builds successfully before submitting a pull request.
+
+---
+
+## 🧪 Testing
+
+Before submitting a pull request, please ensure:
+
+```bash
+python -m pytest
+```
+
+runs successfully.
+
+Contributors are encouraged to add tests for:
+
+- Retrieval pipelines
+- Guardrail logic
+- Document ingestion
+- Semantic verification
+- New roadmap features
+
+---
+
+## 📚 Test Data
+
+When testing retrieval quality:
+
+- Use relevant technical documentation.
+- Verify source retrieval remains accurate.
+- Check that guardrail verification behaves as expected.
+- Confirm responses remain grounded in retrieved context.
+
+---
+
+## 📸 UI Changes
+
+If your contribution modifies the user interface, please include screenshots in the pull request.
+
+---
+
+## 🛣️ Roadmap Areas
+
+Contributions are especially welcome in:
+
+- Source Citation
+- Conversational Memory
+- Semantic Input Routing
+- Self-Correction Loops
+- Multi-Document Knowledge Graphs
+- Retrieval Quality Improvements
+- Guardrail Enhancements
+
+---
+
+## 📜 License
+
+By contributing, you agree that your contributions will be licensed under the MIT License.
